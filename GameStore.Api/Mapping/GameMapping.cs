@@ -45,6 +45,7 @@ namespace GameStore.Api.Mapping
         {
             return new Game()
             {
+                Id = id,
                 Name = game.Name,
                 GenreId = game.GenreId,
                 Price = game.Price,

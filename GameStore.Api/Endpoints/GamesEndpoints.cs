@@ -59,22 +59,20 @@ namespace GameStore.Api.Endpoints
             });
 
             //PUT /games/5
-            group.MapPut("/{id}", (int id, UpdateGameDto gameUpdate) =>
+            group.MapPut("/{id}", (int id, UpdateGameDto gameUpdate, GameStoreContext dbContext) =>
             {
-                var index = games.FindIndex(game => game.Id == id);
+                var existingGame = dbContext.Games.Find(id);
 
-                if (index == -1)
+                if (existingGame is null)
                 {
                     return Results.NotFound();
                 }
 
-                games[index] = new GameSummaryDto(
-                    id,
-                    gameUpdate.Name,
-                    gameUpdate.Genre,
-                    gameUpdate.Price,
-                    gameUpdate.ReleaseDate
-                    );
+                dbContext.Entry(existingGame)
+                    .CurrentValues
+                    .SetValues(gameUpdate.ToEntity(id));
+
+                dbContext.SaveChanges();
 
                 return Results.NoContent();
             });
