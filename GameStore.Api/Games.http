@@ -1,0 +1,36 @@
+﻿@Games_HostAddress = http://localhost:5235
+
+
+###
+GET {{Games_HostAddress}}/games/
+Accept: application/json
+
+###
+GET {{Games_HostAddress}}/games/6
+Accept: application/json
+
+###
+POST {{Games_HostAddress}}/games/
+Accept: application/json
+Content-Type:  application/json
+{
+  "name": "Final Fantasy XIV",
+  "genreId": 2,
+  "price": 59.99,
+  "releasedDate": "2010-09-30"
+}
+
+###
+PUT {{Games_HostAddress}}/games/1
+# Accept: application/json
+Content-Type:  application/json
+{
+  "name": "Mortal Combat",
+  "genre": "Combat",
+  "price": 55.99,
+  "releasedDate": "22-10-16"
+}
+
+###
+DELETE {{Games_HostAddress}}/games/9
+Accept: application/json

@@ -39,8 +39,9 @@ if (app.Environment.IsDevelopment())
     //    c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API v1");
     //});
 }
-
+// Custom Mapping of Endpoints
 app.MapGamesEndpoints();
+app.MapGenreEndpoints();
 
 app.UseHttpsRedirection();
 
@@ -48,6 +49,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-//app.MigrateDb();
+await app.MigrateDbAsync();
 
 app.Run();
