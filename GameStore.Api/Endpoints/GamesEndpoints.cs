@@ -2,6 +2,7 @@
 using GameStore.Api.Dtos;
 using GameStore.Api.Entities;
 using GameStore.Api.Mapping;
+using Microsoft.EntityFrameworkCore;
 
 namespace GameStore.Api.Endpoints
 {
@@ -11,11 +12,11 @@ namespace GameStore.Api.Endpoints
         const string GetGameEndpointName = "GetGame";
 
         // Creating an in memory DB for games resource
-        private static readonly List<GameDto> games =
+        private static readonly List<GameSummaryDto> games =
         [
             new (1, "Street Fighter II", "1", 19.99M, new DateOnly(1992, 7, 15)),
             new (2, "Final Fantasy XIV", "4", 59.99M, new DateOnly(2010, 9, 30)),
-            new GameDto(3, "FIFA 23", "2", 66.99M, new DateOnly(2022, 9,27)),
+            new GameSummaryDto(3, "FIFA 23", "2", 66.99M, new DateOnly(2022, 9,27)),
         ];
 
         public static RouteGroupBuilder MapGamesEndpoints(this WebApplication app)
@@ -23,14 +24,24 @@ namespace GameStore.Api.Endpoints
             var group = app.MapGroup("games")
                 .WithParameterValidation();
             // GET /games
-            group.MapGet("/", () => games); //Example of a minimal API
+            group.MapGet("/", (GameStoreContext dbContext) =>
+            {
+                var games = dbContext.Games.ToList();
+                 var gamesDto = new List<GameSummaryDto>();
+                foreach(var game in games)
+                {
+                    var gameDto = game.ToGameSummaryDto();
+                    gamesDto.Add(gameDto);
+                }
+                return gamesDto;
+            }); //Example of a minimal API
 
             // GET /games/1
-            group.MapGet("/{id}", (int id) =>
+            group.MapGet("/{id}", (int id, GameStoreContext dbContext) =>
             {
-                GameDto? game = games.Find(game => game.Id == id);
+                Game? game = dbContext.Games.Find(id);
 
-                return game is null ? Results.NotFound() : Results.Ok(game);
+                return game is null ? Results.NotFound() : Results.Ok(game.ToGameDetailsDto());
 
             }).WithName(GetGameEndpointName);
 
@@ -43,7 +54,7 @@ namespace GameStore.Api.Endpoints
                 dbContext.Games.Add(game);   //Or dbContext.Add(game);
                 dbContext.SaveChanges();
 
-                return Results.CreatedAtRoute(GetGameEndpointName, new { id = game.Id }, game.ToDto());
+                return Results.CreatedAtRoute(GetGameEndpointName, new { id = game.Id }, game.ToGameSummaryDto());
 
             });
 
@@ -57,7 +68,7 @@ namespace GameStore.Api.Endpoints
                     return Results.NotFound();
                 }
 
-                games[index] = new GameDto(
+                games[index] = new GameSummaryDto(
                     id,
                     gameUpdate.Name,
                     gameUpdate.Genre,
@@ -90,7 +101,7 @@ namespace GameStore.Api.Endpoints
     //            // GET /games/1
     //            app.MapGet("games/{id}", (int id) =>
     //            {
-    //                GameDto? game = games.Find(game => game.Id == id);
+    //                GameSummaryDto? game = games.Find(game => game.Id == id);
 
     //                return game is null ? Results.NotFound() : Results.Ok(game);
     //            })
@@ -99,7 +110,7 @@ namespace GameStore.Api.Endpoints
     //            //POST /games
     //            app.MapPost("games", (CreateGameDto newGame) =>
     //            {
-    //                GameDto game = new(
+    //                GameSummaryDto game = new(
     //                    games.Count + 1,
     //                    newGame.Name,
     //                    newGame.Genre,
@@ -121,7 +132,7 @@ namespace GameStore.Api.Endpoints
     //                    return Results.NotFound();
     //                }
 
-    //                games[index] = new GameDto(
+    //                games[index] = new GameSummaryDto(
     //                    id,
     //                    gameUpdate.Name,
     //                    gameUpdate.Genre,
@@ -144,7 +155,7 @@ namespace GameStore.Api.Endpoints
     //            // GET /games/id
     //            //app.MapGet("games/{id}", (int id) => games[id]); // ---> This is not a better option to "Find()" because it works with the array positioning and not the resource ID, however it works.
 
-    //            //List<GameDto> games = new() ----> // Another way to implement the above
+    //            //List<GameSummaryDto> games = new() ----> // Another way to implement the above
     //            //{
     //            //    new (1, "Street Fighter", "Combat", 19.99M, new DateOnly(1992, 7, 15)),
     //            //    new (1, "Street Fighter", "Combat", 19.99M, new DateOnly(1992, 7, 15)),
